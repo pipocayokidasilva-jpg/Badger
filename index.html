@@ -1,0 +1,134 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GameZone | Jogos Online</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#10111a;color:white;font-family:Arial,sans-serif}
+header{padding:24px 7%;background:#191a28;border-bottom:1px solid #303146}
+.logo{font-size:28px;font-weight:900;color:#8c7bff}
+header p{color:#b9bad0}
+main{max-width:1100px;margin:30px auto;padding:0 20px}
+input{width:100%;padding:15px;border-radius:12px;border:1px solid #34364c;background:#1c1e2c;color:white;font-size:16px}
+h2{margin-top:30px}
+.games{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.game{background:#1c1e2c;border:1px solid #303146;border-radius:15px;overflow:hidden}
+.cover{height:125px;display:grid;place-items:center;font-size:55px;background:linear-gradient(135deg,#5544a5,#171a31)}
+.info{padding:15px}
+.info p{color:#b9bad0;font-size:14px}
+button{background:#7764ff;color:white;border:0;padding:11px 17px;border-radius:8px;cursor:pointer;font-weight:bold}
+footer{text-align:center;color:#85869b;padding:30px}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🎮 GAMEZONE</div>
+  <p>Seu próximo jogo favorito está aqui.</p>
+</header>
+<main>
+  <input id="search" placeholder="🔎 Pesquisar jogos..." oninput="filterGames()">
+  <h2>🔥 Jogos em destaque</h2>
+  <div class="games" id="games">
+    <article class="game" data-name="jogo da cobrinha">
+      <div class="cover">🐍</div>
+      <div class="info"><h3>Jogo da Cobrinha</h3><p>Clássico jogo de arcade.</p><button onclick="play('snake')">Jogar agora</button></div>
+    </article>
+    <article class="game" data-name="clique infinito">
+      <div class="cover">🖱️</div>
+      <div class="info"><h3>Clique Infinito</h3><p>Faça o máximo de pontos.</p><button onclick="play('clicker')">Jogar agora</button></div>
+    </article>
+    <article class="game" data-name="desafio da memoria">
+      <div class="cover">🧠</div>
+      <div class="info"><h3>Desafio da Memória</h3><p>Teste sua memória.</p><button onclick="play('memory')">Jogar agora</button></div>
+    </article>
+  </div>
+  <section id="area" hidden>
+    <h2 id="gameTitle"></h2>
+    <div id="gameContent"></div>
+    <p><button onclick="closeGame()">Voltar aos jogos</button></p>
+  </section>
+</main>
+<footer>GAMEZONE © 2026 · Portal de jogos</footer>
+<script>
+function filterGames(){
+ const q=document.getElementById('search').value.toLowerCase();
+ document.querySelectorAll('.game').forEach(g=>{
+  g.style.display=g.dataset.name.includes(q)?'':'none';
+ });
+}
+let timer;
+function closeGame(){
+ clearInterval(timer);
+ document.getElementById('area').hidden=true;
+ document.getElementById('games').style.display='grid';
+}
+function play(type){
+ const area=document.getElementById('area');
+ const content=document.getElementById('gameContent');
+ document.getElementById('games').style.display='none';
+ area.hidden=false;
+ if(type==='clicker'){
+  document.getElementById('gameTitle').textContent='Clique Infinito';
+  let points=0;
+  content.innerHTML='<p>Pontos: <b id="points">0</b></p><button id="click">CLIQUE AQUI!</button>';
+  document.getElementById('click').onclick=()=>{
+   document.getElementById('points').textContent=++points;
+  };
+ }else if(type==='snake'){
+  document.getElementById('gameTitle').textContent='Jogo da Cobrinha';
+  content.innerHTML='<p>Use as setas do teclado para jogar.</p><canvas id="board" width="300" height="300" style="background:#080b12;max-width:100%"></canvas><p id="score">Pontuação: 0</p><button onclick="playSnake()">Recomeçar</button>';
+  playSnake();
+ }else{
+  document.getElementById('gameTitle').textContent='Desafio da Memória';
+  let cards=['🍎','🚀','🐸','⚽','🍎','🚀','🐸','⚽'].sort(()=>Math.random()-.5);
+  content.innerHTML='<p>Encontre os pares!</p><div id="memory" style="display:grid;grid-template-columns:repeat(4,60px);gap:8px"></div>';
+  let first=null,lock=false,found=0;
+  cards.forEach((emoji)=>{
+   let b=document.createElement('button');b.textContent='❔';
+   b.style.cssText='height:60px;padding:0;font-size:24px';
+   b.onclick=()=>{
+    if(lock||b.dataset.done||b===first)return;
+    b.textContent=emoji;
+    if(!first){first=b;return}
+    if(first.textContent===b.textContent){
+     first.dataset.done=b.dataset.done='1';first=b=null;found+=2;
+     if(found===8)content.insertAdjacentHTML('beforeend','<p>Você venceu! 🎉</p>');
+    }else{
+     lock=true;let prev=first;first=null;
+     timer=setTimeout(()=>{prev.textContent='❔';b.textContent='❔';lock=false},700);
+    }
+   };
+   document.getElementById('memory').appendChild(b);
+  });
+ }
+}
+function playSnake(){
+ clearInterval(timer);
+ const c=document.getElementById('board'),ctx=c.getContext('2d');
+ let s=[{x:7,y:7}],food={x:3,y:3},dx=1,dy=0,score=0,alive=true;
+ function key(e){
+  if(e.key==='ArrowUp'&&dy!==1){dx=0;dy=-1}
+  if(e.key==='ArrowDown'&&dy!==-1){dx=0;dy=1}
+  if(e.key==='ArrowLeft'&&dx!==1){dx=-1;dy=0}
+  if(e.key==='ArrowRight'&&dx!==-1){dx=1;dy=0}
+ }
+ document.onkeydown=key;
+ timer=setInterval(()=>{
+  if(!alive)return;
+  let h={x:s[0].x+dx,y:s[0].y+dy};
+  if(h.x<0||h.x>=15||h.y<0||h.y>=15||s.some(p=>p.x===h.x&&p.y===h.y)){alive=false;document.getElementById('score').textContent='Fim de jogo! Pontuação: '+score;return}
+  s.unshift(h);
+  if(h.x===food.x&&h.y===food.y){score++;food={x:Math.floor(Math.random()*15),y:Math.floor(Math.random()*15)}}
+  else s.pop();
+  ctx.clearRect(0,0,300,300);
+  ctx.fillStyle='#ff647c';ctx.fillRect(food.x*20,food.y*20,18,18);
+  ctx.fillStyle='#8c7bff';s.forEach(p=>ctx.fillRect(p.x*20,p.y*20,18,18));
+  document.getElementById('score').textContent='Pontuação: '+score;
+ },140);
+}
+</script>
+</body>
+</html>
